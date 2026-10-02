@@ -13,7 +13,7 @@
   --bg:#221a2e; --bg2:#2e2440; --line:#473a5e;
   --accent:#b491e6; --accent-dk:#8d67c6;
   --card:#f3ecdf; --ink:#241b2e; --ink-soft:#655a72;
-  --known:#63a879; --almost:#3fb0a8; --important:#dd6a5b;
+  --known:#63a879; --almost:#3fb0a8; --important:#dd6a5b; --optional:#c6a15e;
 }
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 html,body{margin:0;padding:0;background:var(--bg);color:#e9e3f0;
@@ -32,10 +32,13 @@ h1 em{font-style:italic;color:var(--accent);font-weight:700}
 .pile[data-p="known"] .num{color:var(--known)}
 .pile[data-p="almost"] .num{color:var(--almost)}
 .pile[data-p="important"] .num{color:var(--important)}
+.pile[data-p="optional"] .num{color:var(--optional)}
+.pile.wide,.sort.wide{grid-column:1 / -1}
 .pile.sel{border-color:var(--accent);background:#392d4f}
 .pile[data-p="known"].sel{border-color:var(--known)}
 .pile[data-p="almost"].sel{border-color:var(--almost)}
 .pile[data-p="important"].sel{border-color:var(--important)}
+.pile[data-p="optional"].sel{border-color:var(--optional)}
 .card{background:var(--card);color:var(--ink);border-radius:12px;padding:22px 18px;min-height:250px;
   display:flex;flex-direction:column;justify-content:center}
 .qnum{font-size:11px;letter-spacing:2px;text-transform:uppercase;color:var(--ink-soft);margin-bottom:14px}
@@ -57,6 +60,7 @@ button{font:inherit;cursor:pointer;border:none}
 .sort[data-p="known"] .t{color:var(--known)}
 .sort[data-p="almost"] .t{color:var(--almost)}
 .sort[data-p="important"] .t{color:var(--important)}
+.sort[data-p="optional"] .t{color:var(--optional)}
 .sort.here{border-color:var(--accent)}
 .nav{display:flex;gap:10px;align-items:center;justify-content:space-between;margin-top:12px}
 .nav button{background:var(--bg2);border:1px solid var(--line);color:#d6cce4;
@@ -68,6 +72,35 @@ footer .acts button{background:none;color:#a89bb8;text-decoration:underline;padd
 #dir{background:var(--bg2);border:1px solid var(--line);color:#c9bcda;border-radius:8px;
   padding:7px 12px;font-size:12.5px;text-decoration:none}
 #restore-file{display:none}
+.cardacts{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px}
+.cardacts button{background:var(--bg2);border:1px solid var(--line);border-radius:9px;
+  padding:10px;color:#c9bcda;font-size:14px}
+.cardacts button.del{color:#e39d92}
+.edit{margin-top:4px}
+.edit label{display:block;font-size:11px;letter-spacing:1.6px;text-transform:uppercase;
+  color:var(--ink-soft);font-weight:700;margin:12px 0 5px}
+.edit textarea{width:100%;font:inherit;font-size:18px;line-height:1.4;color:var(--ink);
+  background:#fffdf7;border:2px solid #d8cfc0;border-radius:8px;padding:10px;resize:vertical;min-height:62px}
+.edit textarea:focus{outline:none;border-color:var(--accent-dk)}
+.editbtns{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:14px}
+.editbtns button{border-radius:9px;padding:12px;font-size:15px;font-weight:700}
+.editbtns .ok{background:var(--accent);color:#1d1029}
+.editbtns .no{background:#e2dacd;color:#4a4238}
+.edited{font-size:11px;letter-spacing:1.4px;text-transform:uppercase;color:#9a7f46;margin-top:10px}
+.sheet{position:fixed;inset:0;background:rgba(14,9,20,.72);display:flex;align-items:flex-end;
+  justify-content:center;z-index:50;padding:10px}
+.sheet .inner{background:var(--bg2);border:1px solid var(--line);border-radius:14px;
+  width:100%;max-width:760px;max-height:82vh;overflow:auto;padding:16px}
+.sheet h2{margin:0 0 4px;font-size:17px;font-family:Georgia,serif}
+.sheet .note{font-size:12.5px;color:#9d8fae;margin-bottom:12px}
+.drow{display:flex;gap:10px;align-items:center;justify-content:space-between;
+  border-top:1px solid var(--line);padding:11px 2px}
+.drow .txt{font-size:14.5px;line-height:1.35;color:#ded5ea}
+.drow .txt span{display:block;color:#9d8fae;font-size:13px;margin-top:2px}
+.drow button{background:none;border:1px solid var(--line);border-radius:8px;color:var(--accent);
+  padding:7px 12px;font-size:13px;white-space:nowrap}
+.sheet .close{width:100%;margin-top:14px;background:var(--accent);color:#1d1029;
+  font-weight:700;font-size:16px;padding:13px;border-radius:10px}
 .empty{text-align:center;color:var(--ink-soft);padding:50px 20px;font-size:17px;line-height:1.6}
 .hide{display:none !important}
 </style>
@@ -83,6 +116,7 @@ footer .acts button{background:none;color:#a89bb8;text-decoration:underline;padd
   <button class="pile" data-p="known"><div class="num" id="n-known">0</div><div class="lbl">Known</div></button>
   <button class="pile" data-p="almost"><div class="num" id="n-almost">0</div><div class="lbl">Almost</div></button>
   <button class="pile" data-p="important"><div class="num" id="n-important">0</div><div class="lbl">Important</div></button>
+  <button class="pile wide" data-p="optional"><div class="num" id="n-optional">0</div><div class="lbl">Optional</div></button>
 </div>
 
 <div class="card" id="card"></div>
@@ -94,6 +128,12 @@ footer .acts button{background:none;color:#a89bb8;text-decoration:underline;padd
   <button class="sort" data-p="known"><div class="t">Known</div><div class="s">I know it</div></button>
   <button class="sort" data-p="almost"><div class="t">Almost</div><div class="s">nearly there</div></button>
   <button class="sort" data-p="important"><div class="t">Important</div><div class="s">needs work</div></button>
+  <button class="sort wide" data-p="optional"><div class="t">Optional</div><div class="s">only if time permits</div></button>
+</div>
+
+<div class="cardacts" id="cardacts">
+  <button id="edit">Edit this card</button>
+  <button id="delete" class="del">Delete this card</button>
 </div>
 
 <div class="nav">
@@ -108,32 +148,66 @@ footer .acts button{background:none;color:#a89bb8;text-decoration:underline;padd
   <span class="acts">
     <button id="backup">Backup</button>
     <button id="restore">Restore</button>
+    <button id="bin">Deleted (0)</button>
     <button id="reset">Reset piles</button>
   </span>
   <input type="file" id="restore-file" accept="application/json,.json">
 </footer>
+
+<div class="sheet hide" id="sheet"><div class="inner">
+  <h2>Deleted cards</h2>
+  <div class="note">These are kept out of the piles but never thrown away. Tap Restore to bring one back.</div>
+  <div id="dlist"></div>
+  <button class="close" id="sheet-close">Close</button>
+</div></div>
+
 <script>
 var CARDS = [{"n": 1, "gr": "βλέπω μια ταινία στο σπίτι", "en": "I watch a film at home"}, {"n": 2, "gr": "πηγαίνω στον κινηματογράφο", "en": "I go to the cinema"}, {"n": 3, "gr": "η μεγάλη οθόνη", "en": "big screen"}, {"n": 4, "gr": "η ποιότητα του ήχου", "en": "sound quality"}, {"n": 5, "gr": "η ατμόσφαιρα της αίθουσας", "en": "the atmosphere in the auditorium"}, {"n": 6, "gr": "τα εισιτήρια", "en": "tickets"}, {"n": 7, "gr": "το κόστος της εξόδου", "en": "the cost of going out"}, {"n": 8, "gr": "βλέπω την ταινία με παρέα", "en": "I watch the film with friends"}, {"n": 9, "gr": "κάθομαι άνετα στον καναπέ", "en": "I sit comfortably on the sofa"}, {"n": 10, "gr": "κάνω ένα διάλειμμα", "en": "I take a break"}, {"n": 11, "gr": "διαλέγω όποια ταινία θέλω", "en": "I choose whichever film I want"}, {"n": 12, "gr": "η προβολή αρχίζει συγκεκριμένη ώρα", "en": "the screening starts at a set time"}, {"n": 13, "gr": "με ενοχλεί ο θόρυβος", "en": "the noise bothers me"}, {"n": 14, "gr": "μοιράζομαι την εμπειρία", "en": "I share the experience"}, {"n": 15, "gr": "προτιμώ να βγαίνω από το σπίτι", "en": "I prefer to go out"}, {"n": 16, "gr": "το σπίτι είναι πιο οικονομικό", "en": "staying home is cheaper"}, {"n": 17, "gr": "μένω σε ξενοδοχείο", "en": "I stay in a hotel"}, {"n": 18, "gr": "κάνω κάμπινγκ", "en": "I go camping"}, {"n": 19, "gr": "η διαμονή", "en": "accommodation"}, {"n": 20, "gr": "κλείνω δωμάτιο", "en": "I book a room"}, {"n": 21, "gr": "στήνω σκηνή", "en": "I pitch a tent"}, {"n": 22, "gr": "ο υπνόσακος", "en": "sleeping bag"}, {"n": 23, "gr": "το μπάνιο στο δωμάτιο", "en": "bathroom in the room"}, {"n": 24, "gr": "η καθαριότητα", "en": "cleanliness"}, {"n": 25, "gr": "η άνεση", "en": "comfort"}, {"n": 26, "gr": "η επαφή με τη φύση", "en": "contact with nature"}, {"n": 27, "gr": "κοιμάμαι κάτω από τα αστέρια", "en": "I sleep under the stars"}, {"n": 28, "gr": "ο θόρυβος των άλλων επισκεπτών", "en": "noise from other guests"}, {"n": 29, "gr": "οι κοινόχρηστες εγκαταστάσεις", "en": "shared facilities"}, {"n": 30, "gr": "εξαρτώμαι από τον καιρό", "en": "I depend on the weather"}, {"n": 31, "gr": "οικονομικές διακοπές", "en": "affordable holidays"}, {"n": 32, "gr": "έχω περισσότερη ιδιωτικότητα", "en": "I have more privacy"}, {"n": 33, "gr": "το πρωινό περιλαμβάνεται", "en": "breakfast is included"}, {"n": 34, "gr": "χρειάζομαι εξοπλισμό", "en": "I need equipment"}, {"n": 35, "gr": "ο αρχαιολογικός χώρος", "en": "archaeological site"}, {"n": 36, "gr": "η Ακρόπολη των Αθηνών", "en": "the Acropolis of Athens"}, {"n": 37, "gr": "ο Παρθενώνας", "en": "the Parthenon"}, {"n": 38, "gr": "το Μουσείο της Ακρόπολης", "en": "the Acropolis Museum"}, {"n": 39, "gr": "η Επίδαυρος", "en": "Epidaurus"}, {"n": 40, "gr": "το αρχαίο θέατρο", "en": "ancient theatre"}, {"n": 41, "gr": "η ακουστική του θεάτρου", "en": "the theatre’s acoustics"}, {"n": 42, "gr": "η πολιτιστική κληρονομιά", "en": "cultural heritage"}, {"n": 43, "gr": "η ιστορική σημασία", "en": "historical importance"}, {"n": 44, "gr": "οργανώνω μια εκδρομή", "en": "I organise an excursion"}, {"n": 45, "gr": "διαλέγω με βάση τον χρόνο που έχουμε", "en": "I choose based on the time we have"}, {"n": 46, "gr": "μια σύντομη επίσκεψη στην Αθήνα", "en": "a short visit to Athens"}, {"n": 47, "gr": "μια μεγαλύτερη εκδρομή στην Πελοπόννησο", "en": "a longer trip to the Peloponnese"}, {"n": 48, "gr": "συνδυάζω την επίσκεψη με άλλα μέρη", "en": "I combine the visit with other places"}, {"n": 49, "gr": "πείθω την οικογένειά μου", "en": "I persuade my family"}, {"n": 50, "gr": "αξίζει να το δούμε από κοντά", "en": "it is worth seeing in person"}, {"n": 51, "gr": "το κόστος μετακίνησης", "en": "travel cost"}, {"n": 52, "gr": "τα ενδιαφέροντα των παιδιών", "en": "the children’s interests"}, {"n": 53, "gr": "βλέπουμε ταινία όλοι μαζί", "en": "we watch a film together"}, {"n": 54, "gr": "μια παρέα φίλων", "en": "a group of friends"}, {"n": 55, "gr": "ο κινηματογράφος", "en": "cinema"}, {"n": 56, "gr": "η βραδιά στο σπίτι", "en": "evening at home"}, {"n": 57, "gr": "συζητάμε μετά την ταινία", "en": "we discuss the film afterwards"}, {"n": 58, "gr": "διαλέγουμε μαζί την ταινία", "en": "we choose the film together"}, {"n": 59, "gr": "παραγγέλνουμε φαγητό", "en": "we order food"}, {"n": 60, "gr": "αγοράζουμε ποπ κορν", "en": "we buy popcorn"}, {"n": 61, "gr": "κρατάμε θέσεις", "en": "we reserve seats"}, {"n": 62, "gr": "ο δυνατός ήχος", "en": "loud sound"}, {"n": 63, "gr": "η ατμόσφαιρα", "en": "atmosphere"}, {"n": 64, "gr": "το εισιτήριο είναι ακριβό", "en": "the ticket is expensive"}, {"n": 65, "gr": "σταματάμε την ταινία όποτε θέλουμε", "en": "we pause the film whenever we want"}, {"n": 66, "gr": "στο σπίτι μιλάμε ελεύθερα", "en": "at home we can talk freely"}, {"n": 67, "gr": "στο σινεμά δεν πρέπει να ενοχλούμε", "en": "at the cinema we must not disturb others"}, {"n": 68, "gr": "η πυρηνική οικογένεια", "en": "nuclear family"}, {"n": 69, "gr": "η εκτεταμένη οικογένεια", "en": "extended family"}, {"n": 70, "gr": "οι γονείς και τα παιδιά", "en": "parents and children"}, {"n": 71, "gr": "οι παππούδες και οι γιαγιάδες", "en": "grandparents"}, {"n": 72, "gr": "τρεις γενιές κάτω από την ίδια στέγη", "en": "three generations under one roof"}, {"n": 73, "gr": "η βοήθεια με τα παιδιά", "en": "help with the children"}, {"n": 74, "gr": "μοιραζόμαστε τα έξοδα", "en": "we share expenses"}, {"n": 75, "gr": "η ιδιωτική ζωή", "en": "privacy"}, {"n": 76, "gr": "ο προσωπικός χώρος", "en": "personal space"}, {"n": 77, "gr": "η ανεξαρτησία", "en": "independence"}, {"n": 78, "gr": "διαφωνούμε για την ανατροφή των παιδιών", "en": "we disagree about raising children"}, {"n": 79, "gr": "βάζουμε σαφή όρια", "en": "we set clear boundaries"}, {"n": 80, "gr": "σεβόμαστε ο ένας τον άλλον", "en": "we respect each other"}, {"n": 81, "gr": "φροντίζουμε τους ηλικιωμένους", "en": "we care for elderly relatives"}, {"n": 82, "gr": "συζητάμε πριν μετακομίσουμε", "en": "we discuss it before moving"}, {"n": 83, "gr": "λαμβάνουμε υπόψη τις ανάγκες όλων", "en": "we take everyone’s needs into account"}, {"n": 84, "gr": "οι δυσκολίες του επαγγέλματος", "en": "the difficulties of the profession"}, {"n": 85, "gr": "ο γιατρός / η γιατρός", "en": "the doctor"}, {"n": 86, "gr": "ο οικοδόμος / η οικοδόμος", "en": "the construction worker / builder"}, {"n": 87, "gr": "το εργοτάξιο", "en": "construction site"}, {"n": 88, "gr": "ο ασθενής / η ασθενής", "en": "the patient"}, {"n": 89, "gr": "η ευθύνη απέναντι στους ασθενείς", "en": "responsibility towards patients"}, {"n": 90, "gr": "παίρνω δύσκολες αποφάσεις", "en": "to make difficult decisions"}, {"n": 91, "gr": "κάνω σωστή διάγνωση", "en": "to make an accurate diagnosis"}, {"n": 92, "gr": "αντιμετωπίζω επείγοντα περιστατικά", "en": "to deal with emergencies"}, {"n": 93, "gr": "εργάζομαι πολλές ώρες", "en": "to work long hours"}, {"n": 94, "gr": "οι εφημερίες", "en": "on-call shifts"}, {"n": 95, "gr": "η σωματική κούραση", "en": "physical fatigue"}, {"n": 96, "gr": "η ψυχολογική πίεση", "en": "psychological pressure"}, {"n": 97, "gr": "σηκώνω βαριά αντικείμενα", "en": "to lift heavy objects"}, {"n": 98, "gr": "εργάζομαι σε εξωτερικό χώρο", "en": "to work outdoors"}, {"n": 99, "gr": "οι δύσκολες καιρικές συνθήκες", "en": "difficult weather conditions"}, {"n": 100, "gr": "ο κίνδυνος ατυχήματος", "en": "risk of an accident"}, {"n": 101, "gr": "τηρώ τους κανόνες ασφαλείας", "en": "to follow safety rules"}, {"n": 102, "gr": "φοράω κράνος προστασίας", "en": "to wear a safety helmet"}, {"n": 103, "gr": "είμαι υπεύθυνος για την ασφάλεια των άλλων", "en": "to be responsible for other people’s safety"}, {"n": 104, "gr": "ταξιδεύω με αεροπλάνο", "en": "to travel by plane"}, {"n": 105, "gr": "ταξιδεύω με τρένο", "en": "to travel by train"}, {"n": 106, "gr": "η αεροπορική μετακίνηση", "en": "air travel"}, {"n": 107, "gr": "η σιδηροδρομική μετακίνηση", "en": "rail travel"}, {"n": 108, "gr": "η πτήση", "en": "flight"}, {"n": 109, "gr": "το δρομολόγιο", "en": "route / service"}, {"n": 110, "gr": "η απευθείας πτήση", "en": "direct flight"}, {"n": 111, "gr": "η ανταπόκριση", "en": "connection"}, {"n": 112, "gr": "η καθυστέρηση", "en": "delay"}, {"n": 113, "gr": "η διάρκεια του ταξιδιού", "en": "journey time"}, {"n": 114, "gr": "οι εκπομπές διοξειδίου του άνθρακα", "en": "carbon dioxide emissions"}, {"n": 115, "gr": "το αποτύπωμα άνθρακα", "en": "carbon footprint"}, {"n": 116, "gr": "καταναλώνω καύσιμα", "en": "to consume fuel"}, {"n": 117, "gr": "επιβαρύνω το περιβάλλον", "en": "to burden the environment"}, {"n": 118, "gr": "το τρένο ρυπαίνει λιγότερο", "en": "the train pollutes less"}, {"n": 119, "gr": "προτιμώ το τρένο για μικρές αποστάσεις", "en": "I prefer the train for short distances"}, {"n": 120, "gr": "το αεροπλάνο εξοικονομεί χρόνο", "en": "the plane saves time"}, {"n": 121, "gr": "οι δημόσιες συγκοινωνίες", "en": "public transport"}, {"n": 122, "gr": "το εισιτήριο με επιστροφή", "en": "return ticket"}, {"n": 123, "gr": "η πιο οικολογική επιλογή", "en": "the more environmentally friendly choice"}, {"n": 124, "gr": "η βιομηχανική ρύπανση", "en": "industrial pollution"}, {"n": 125, "gr": "η ανθρώπινη δραστηριότητα", "en": "human activity"}, {"n": 126, "gr": "η ρύπανση που προκαλεί ο άνθρωπος", "en": "man-made pollution"}, {"n": 127, "gr": "το εργοστάσιο", "en": "factory"}, {"n": 128, "gr": "οι καπνοί των εργοστασίων", "en": "factory fumes"}, {"n": 129, "gr": "τα τοξικά αέρια", "en": "toxic gases"}, {"n": 130, "gr": "τα καυσαέρια", "en": "exhaust fumes"}, {"n": 131, "gr": "τα μικροσωματίδια (τα λεπτά σωματίδια)", "en": "fine particles / particulate matter"}, {"n": 132, "gr": "τα πλαστικά μπουκάλια", "en": "plastic bottles"}, {"n": 133, "gr": "τα πλαστικά απορρίμματα", "en": "plastic waste"}, {"n": 134, "gr": "τα χημικά απόβλητα", "en": "chemical waste"}, {"n": 135, "gr": "η ατμοσφαιρική ρύπανση", "en": "air pollution"}, {"n": 136, "gr": "μολύνω το περιβάλλον", "en": "to pollute the environment"}, {"n": 137, "gr": "η ποιότητα του αέρα", "en": "air quality"}, {"n": 138, "gr": "βλάπτω την υγεία", "en": "to harm health"}, {"n": 139, "gr": "μειώνω τις εκπομπές", "en": "to reduce emissions"}, {"n": 140, "gr": "η ανακύκλωση", "en": "recycling"}, {"n": 141, "gr": "οι ανανεώσιμες πηγές ενέργειας", "en": "renewable energy sources"}, {"n": 142, "gr": "προστατεύω τη φύση", "en": "to protect nature"}, {"n": 143, "gr": "λαμβάνω μέτρα", "en": "to take measures"}, {"n": 144, "gr": "ψωνίζω τρόφιμα", "en": "to shop for groceries"}, {"n": 145, "gr": "το σούπερ μάρκετ", "en": "supermarket"}, {"n": 146, "gr": "το μικρό παντοπωλείο της γειτονιάς", "en": "corner shop / neighbourhood grocery"}, {"n": 147, "gr": "ο πελάτης / η πελάτισσα", "en": "customer"}, {"n": 148, "gr": "η εξυπηρέτηση πελατών", "en": "customer service"}, {"n": 149, "gr": "η προσωπική εξυπηρέτηση", "en": "personal service / attention"}, {"n": 150, "gr": "η προσοχή στον πελάτη", "en": "attention to the customer"}, {"n": 151, "gr": "η ποικιλία προϊόντων", "en": "variety of products"}, {"n": 152, "gr": "έχω μεγαλύτερη επιλογή", "en": "to have a wider choice"}, {"n": 153, "gr": "οι χαμηλότερες τιμές", "en": "lower prices"}, {"n": 154, "gr": "οι προσφορές", "en": "special offers"}, {"n": 155, "gr": "τα φρέσκα προϊόντα", "en": "fresh produce"}, {"n": 156, "gr": "τα τοπικά προϊόντα", "en": "local products"}, {"n": 157, "gr": "στηρίζω τις μικρές επιχειρήσεις", "en": "to support small businesses"}, {"n": 158, "gr": "η ουρά στο ταμείο", "en": "queue at the checkout"}, {"n": 159, "gr": "η ευκολία", "en": "convenience"}, {"n": 160, "gr": "η ποιότητα", "en": "quality"}, {"n": 161, "gr": "η εμπιστοσύνη", "en": "trust"}, {"n": 162, "gr": "ο πωλητής με γνωρίζει προσωπικά", "en": "the shopkeeper knows me personally"}, {"n": 163, "gr": "συγκρίνω τις τιμές", "en": "to compare prices"}, {"n": 164, "gr": "διαβάζω βιβλία", "en": "to read books"}, {"n": 165, "gr": "διαβάζω σε οθόνη", "en": "to read on a screen"}, {"n": 166, "gr": "το έντυπο βιβλίο", "en": "printed book"}, {"n": 167, "gr": "το ηλεκτρονικό βιβλίο", "en": "e-book"}, {"n": 168, "gr": "η οθόνη", "en": "screen"}, {"n": 169, "gr": "η ανάγνωση", "en": "reading"}, {"n": 170, "gr": "συγκεντρώνομαι καλύτερα", "en": "to concentrate better"}, {"n": 171, "gr": "αποσπάται η προσοχή μου", "en": "my attention is distracted"}, {"n": 172, "gr": "οι ειδοποιήσεις", "en": "notifications"}, {"n": 173, "gr": "κουράζονται τα μάτια μου", "en": "my eyes get tired"}, {"n": 174, "gr": "μειώνω τον χρόνο μπροστά στην οθόνη", "en": "to reduce screen time"}, {"n": 175, "gr": "γυρίζω τις σελίδες", "en": "to turn the pages"}, {"n": 176, "gr": "η μυρωδιά του χαρτιού", "en": "the smell of paper"}, {"n": 177, "gr": "σημειώνω στο περιθώριο", "en": "to write notes in the margin"}, {"n": 178, "gr": "αποθηκεύω πολλά βιβλία σε μία συσκευή", "en": "to store many books on one device"}, {"n": 179, "gr": "διαβάζω όπου κι αν βρίσκομαι", "en": "to read wherever I am"}, {"n": 180, "gr": "ρυθμίζω το μέγεθος των γραμμάτων", "en": "to adjust the font size"}, {"n": 181, "gr": "εξοικονομώ χώρο", "en": "to save space"}, {"n": 182, "gr": "η βιβλιοθήκη", "en": "library / bookcase"}, {"n": 183, "gr": "το διάβασμα πριν από τον ύπνο", "en": "reading before bed"}, {"n": 184, "gr": "η ζωή σε μια μεγάλη πόλη", "en": "life in a big city"}, {"n": 185, "gr": "η ζωή σε ένα χωριό", "en": "life in a village"}, {"n": 186, "gr": "τα πλεονεκτήματα και τα μειονεκτήματα", "en": "advantages and disadvantages"}, {"n": 187, "gr": "οι περισσότερες ευκαιρίες εργασίας", "en": "more job opportunities"}, {"n": 188, "gr": "η πρόσβαση σε υπηρεσίες", "en": "access to services"}, {"n": 189, "gr": "τα νοσοκομεία και τα σχολεία", "en": "hospitals and schools"}, {"n": 190, "gr": "οι πολιτιστικές εκδηλώσεις", "en": "cultural events"}, {"n": 191, "gr": "η κίνηση στους δρόμους", "en": "traffic"}, {"n": 192, "gr": "η ηχορύπανση", "en": "noise pollution"}, {"n": 193, "gr": "το υψηλό κόστος ζωής", "en": "high cost of living"}, {"n": 194, "gr": "ο γρήγορος ρυθμός ζωής", "en": "fast pace of life"}, {"n": 195, "gr": "η ηρεμία", "en": "peace and quiet"}, {"n": 196, "gr": "ο καθαρός αέρας", "en": "clean air / fresh air"}, {"n": 197, "gr": "οι στενές σχέσεις με τους γείτονες", "en": "close relationships with neighbours"}, {"n": 198, "gr": "οι περιορισμένες επιλογές", "en": "limited options"}, {"n": 199, "gr": "η έλλειψη υπηρεσιών", "en": "lack of services"}, {"n": 200, "gr": "οι μεγάλες αποστάσεις", "en": "long distances"}, {"n": 201, "gr": "νιώθω απομονωμένος / απομονωμένη", "en": "to feel isolated"}, {"n": 202, "gr": "η εργασία σε γραφείο", "en": "office work"}, {"n": 203, "gr": "η εργασία σε εξωτερικό χώρο", "en": "outdoor work"}, {"n": 204, "gr": "δουλεύω μπροστά σε υπολογιστή", "en": "I work at a computer"}, {"n": 205, "gr": "εργάζομαι στη φύση", "en": "I work in nature"}, {"n": 206, "gr": "οι συνθήκες εργασίας", "en": "working conditions"}, {"n": 207, "gr": "το σταθερό ωράριο", "en": "fixed working hours"}, {"n": 208, "gr": "η ευελιξία", "en": "flexibility"}, {"n": 209, "gr": "η σωματική κίνηση", "en": "physical movement"}, {"n": 210, "gr": "η καθιστική ζωή", "en": "sedentary lifestyle"}, {"n": 211, "gr": "η κούραση των ματιών", "en": "eye strain"}, {"n": 212, "gr": "η ζέστη και η βροχή", "en": "heat and rain"}, {"n": 213, "gr": "συνεργάζομαι με συναδέλφους", "en": "I work with colleagues"}, {"n": 214, "gr": "έχω επαφή με πελάτες", "en": "I have contact with customers"}, {"n": 215, "gr": "το περιβάλλον εργασίας μου", "en": "my work environment"}, {"n": 216, "gr": "θα άλλαζα χώρο εργασίας", "en": "I would change workplace"}, {"n": 217, "gr": "προτιμώ να μην κάθομαι όλη μέρα", "en": "I prefer not to sit all day"}, {"n": 218, "gr": "προσαρμόζομαι στην Ελλάδα", "en": "I adapt to life in Greece"}, {"n": 219, "gr": "παρακολουθώ μαθήματα ελληνικών", "en": "I take Greek lessons"}, {"n": 220, "gr": "μαθαίνω την ελληνική γλώσσα", "en": "I learn Greek"}, {"n": 221, "gr": "εξασκούμαι στην ομιλία", "en": "I practise speaking"}, {"n": 222, "gr": "καταλαβαίνω τους γείτονες", "en": "I understand the neighbours"}, {"n": 223, "gr": "διεκπεραιώνω καθημερινές δουλειές", "en": "I manage everyday tasks"}, {"n": 224, "gr": "συμμετέχω σε μαθήματα χορού", "en": "I take dance classes"}, {"n": 225, "gr": "μαθαίνω παραδοσιακούς χορούς", "en": "I learn traditional dances"}, {"n": 226, "gr": "γνωρίζω καινούριους ανθρώπους", "en": "I meet new people"}, {"n": 227, "gr": "κάνω φίλους", "en": "I make friends"}, {"n": 228, "gr": "νιώθω μέρος της κοινότητας", "en": "I feel part of the community"}, {"n": 229, "gr": "ξεπερνώ την ντροπή μου", "en": "I overcome my shyness"}, {"n": 230, "gr": "μαθαίνω την τοπική κουλτούρα", "en": "I learn about the local culture"}, {"n": 231, "gr": "η γλωσσική δυσκολία", "en": "language difficulty"}, {"n": 232, "gr": "η κοινωνική ένταξη", "en": "social integration"}, {"n": 233, "gr": "οι δύο δραστηριότητες βοηθούν με διαφορετικό τρόπο", "en": "the two activities help in different ways"}, {"n": 234, "gr": "η ισορροπημένη διατροφή", "en": "balanced diet"}, {"n": 235, "gr": "η σαλάτα", "en": "salad"}, {"n": 236, "gr": "η πίτσα", "en": "pizza"}, {"n": 237, "gr": "τα φρέσκα λαχανικά", "en": "fresh vegetables"}, {"n": 238, "gr": "τα θρεπτικά συστατικά", "en": "nutrients"}, {"n": 239, "gr": "οι θερμίδες", "en": "calories"}, {"n": 240, "gr": "το γρήγορο φαγητό", "en": "fast food"}, {"n": 241, "gr": "το σπιτικό φαγητό", "en": "home-cooked food"}, {"n": 242, "gr": "τρώω με μέτρο", "en": "I eat in moderation"}, {"n": 243, "gr": "ετοιμάζω ένα γεύμα", "en": "I prepare a meal"}, {"n": 244, "gr": "παραγγέλνω απ’ έξω", "en": "I order takeaway"}, {"n": 245, "gr": "η ποικιλία στη διατροφή", "en": "variety in the diet"}, {"n": 246, "gr": "είναι χορταστικό", "en": "it is filling"}, {"n": 247, "gr": "είναι νόστιμο αλλά λιπαρό", "en": "it is tasty but fatty"}, {"n": 248, "gr": "φροντίζω την υγεία μου", "en": "I look after my health"}, {"n": 249, "gr": "προσθέτω λαχανικά στην πίτσα", "en": "I add vegetables to the pizza"}, {"n": 250, "gr": "το βιολί", "en": "violin"}, {"n": 251, "gr": "τα ντραμς / τα τύμπανα", "en": "drums"}, {"n": 252, "gr": "το μουσικό όργανο", "en": "musical instrument"}, {"n": 253, "gr": "το ωδείο", "en": "music school / conservatory"}, {"n": 254, "gr": "τα μαθήματα μουσικής", "en": "music lessons"}, {"n": 255, "gr": "παίζω βιολί", "en": "I play the violin"}, {"n": 256, "gr": "παίζω ντραμς", "en": "I play the drums"}, {"n": 257, "gr": "μαθαίνω να διαβάζω νότες", "en": "I learn to read music"}, {"n": 258, "gr": "κάνω εξάσκηση κάθε μέρα", "en": "I practise every day"}, {"n": 259, "gr": "ο ρυθμός", "en": "rhythm"}, {"n": 260, "gr": "η μελωδία", "en": "melody"}, {"n": 261, "gr": "παίζω σε μια ορχήστρα", "en": "I play in an orchestra"}, {"n": 262, "gr": "παίζω σε ένα συγκρότημα", "en": "I play in a band"}, {"n": 263, "gr": "ο θόρυβος ενοχλεί τους γείτονες", "en": "the noise disturbs the neighbours"}, {"n": 264, "gr": "χρειάζομαι υπομονή", "en": "I need patience"}, {"n": 265, "gr": "εκφράζω τα συναισθήματά μου", "en": "I express my feelings"}, {"n": 266, "gr": "το επιπλέον μάθημα", "en": "extra class"}, {"n": 267, "gr": "η κηπουρική", "en": "gardening"}, {"n": 268, "gr": "η μαγειρική", "en": "cooking"}, {"n": 269, "gr": "φυτεύω λαχανικά", "en": "I plant vegetables"}, {"n": 270, "gr": "φροντίζω τον κήπο", "en": "I tend the garden"}, {"n": 271, "gr": "μαθαίνω πώς μεγαλώνουν τα φυτά", "en": "I learn how plants grow"}, {"n": 272, "gr": "ετοιμάζω ένα απλό γεύμα", "en": "I prepare a simple meal"}, {"n": 273, "gr": "μαθαίνω υγιεινές συνταγές", "en": "I learn healthy recipes"}, {"n": 274, "gr": "γνωρίζω τις τροφές", "en": "I learn about food"}, {"n": 275, "gr": "δουλεύω μαζί με άλλα παιδιά", "en": "I work with other children"}, {"n": 276, "gr": "αναπτύσσω πρακτικές δεξιότητες", "en": "I develop practical skills"}, {"n": 277, "gr": "μαθαίνω να συνεργάζομαι", "en": "I learn to cooperate"}, {"n": 278, "gr": "μαθαίνω να προσέχω το περιβάλλον", "en": "I learn to care for the environment"}, {"n": 279, "gr": "ψηφίζω την επιλογή μου", "en": "I vote for my choice"}, {"n": 280, "gr": "η γνώμη των γονέων", "en": "the parents’ opinion"}, {"n": 281, "gr": "το παιδί μου θα το ευχαριστηθεί", "en": "my child will enjoy it"}, {"n": 282, "gr": "το γυμναστήριο", "en": "gym"}, {"n": 283, "gr": "το τζόγκινγκ στο πάρκο", "en": "jogging in the park"}, {"n": 284, "gr": "γυμνάζομαι τακτικά", "en": "I exercise regularly"}, {"n": 285, "gr": "η συνδρομή", "en": "membership fee"}, {"n": 286, "gr": "ο γυμναστής / η γυμνάστρια", "en": "trainer"}, {"n": 287, "gr": "τα όργανα γυμναστικής", "en": "exercise machines"}, {"n": 288, "gr": "τρέχω στον καθαρό αέρα", "en": "I run in the fresh air"}, {"n": 289, "gr": "ακολουθώ το δικό μου πρόγραμμα", "en": "I follow my own schedule"}, {"n": 290, "gr": "προστατεύομαι από τη βροχή", "en": "I am sheltered from the rain"}, {"n": 291, "gr": "βελτιώνω τη φυσική μου κατάσταση", "en": "I improve my fitness"}, {"n": 292, "gr": "δυναμώνω τους μυς μου", "en": "I strengthen my muscles"}, {"n": 293, "gr": "μειώνω το άγχος", "en": "I reduce stress"}, {"n": 294, "gr": "ο κίνδυνος τραυματισμού", "en": "risk of injury"}, {"n": 295, "gr": "χρειάζομαι κίνητρο", "en": "I need motivation"}, {"n": 296, "gr": "είναι δωρεάν", "en": "it is free"}, {"n": 297, "gr": "η ποδηλασία", "en": "cycling"}, {"n": 298, "gr": "ο χορός", "en": "dancing"}, {"n": 299, "gr": "κάνω ποδήλατο", "en": "I ride a bicycle"}, {"n": 300, "gr": "κάνω μαθήματα χορού", "en": "I take dance lessons"}, {"n": 301, "gr": "γυμνάζομαι έξω", "en": "I exercise outdoors"}, {"n": 302, "gr": "μαθαίνω βήματα", "en": "I learn dance steps"}, {"n": 303, "gr": "η ισορροπία", "en": "balance"}, {"n": 304, "gr": "ο συντονισμός των κινήσεων", "en": "coordination of movements"}, {"n": 305, "gr": "ο ρυθμός της μουσικής", "en": "the rhythm of the music"}, {"n": 306, "gr": "χορεύω με παρτενέρ", "en": "I dance with a partner"}, {"n": 307, "gr": "φοράω κράνος", "en": "I wear a helmet"}, {"n": 308, "gr": "ο ασφαλής ποδηλατόδρομος", "en": "safe cycle lane"}, {"n": 309, "gr": "ο απαραίτητος εξοπλισμός", "en": "necessary equipment"}, {"n": 310, "gr": "μου φτιάχνει τη διάθεση", "en": "it lifts my mood"}, {"n": 311, "gr": "η λαϊκή αγορά", "en": "street market"}, {"n": 312, "gr": "ο πάγκος", "en": "market stall"}, {"n": 313, "gr": "ο παραγωγός", "en": "producer"}, {"n": 314, "gr": "τα εποχιακά φρούτα και λαχανικά", "en": "seasonal fruit and vegetables"}, {"n": 315, "gr": "τα συσκευασμένα προϊόντα", "en": "packaged products"}, {"n": 316, "gr": "τα είδη καθημερινής χρήσης", "en": "everyday goods"}, {"n": 317, "gr": "η ποικιλία επιλογών", "en": "variety of choices"}, {"n": 318, "gr": "συγκρίνω τιμές", "en": "I compare prices"}, {"n": 319, "gr": "βρίσκω όλα τα προϊόντα σε ένα μέρος", "en": "I find everything in one place"}, {"n": 320, "gr": "στηρίζω τους τοπικούς παραγωγούς", "en": "I support local producers"}, {"n": 321, "gr": "ψωνίζω κατευθείαν από τον παραγωγό", "en": "I buy directly from the producer"}, {"n": 322, "gr": "η φρεσκάδα", "en": "freshness"}, {"n": 323, "gr": "οι ώρες λειτουργίας", "en": "opening hours"}, {"n": 324, "gr": "πηγαίνω με λίστα για ψώνια", "en": "I shop with a list"}, {"n": 325, "gr": "μετακομίζω", "en": "I move house"}, {"n": 326, "gr": "το διαμέρισμα", "en": "apartment"}, {"n": 327, "gr": "η μονοκατοικία", "en": "detached house"}, {"n": 328, "gr": "το μπαλκόνι", "en": "balcony"}, {"n": 329, "gr": "ο κήπος", "en": "garden"}, {"n": 330, "gr": "η θέα", "en": "view"}, {"n": 331, "gr": "η εξοχή", "en": "countryside"}, {"n": 332, "gr": "η πρόσβαση στην πόλη", "en": "access to the city"}, {"n": 333, "gr": "η ησυχία", "en": "peace and quiet"}, {"n": 334, "gr": "οι γείτονες", "en": "neighbours"}, {"n": 335, "gr": "η ιδιωτικότητα", "en": "privacy"}, {"n": 336, "gr": "το ενοίκιο", "en": "rent"}, {"n": 337, "gr": "τα έξοδα συντήρησης", "en": "maintenance costs"}, {"n": 338, "gr": "χρειάζομαι αυτοκίνητο", "en": "I need a car"}, {"n": 339, "gr": "έχω περισσότερο χώρο", "en": "I have more space"}, {"n": 340, "gr": "είναι κοντά σε καταστήματα", "en": "it is close to shops"}, {"n": 341, "gr": "ζυγίζω τα πλεονεκτήματα", "en": "I weigh the advantages"}, {"n": 342, "gr": "ταιριάζει στις ανάγκες της οικογένειάς μου", "en": "it suits my family’s needs"}, {"n": 343, "gr": "το θέατρο", "en": "theatre"}, {"n": 344, "gr": "η θεατρική παράσταση", "en": "theatre performance"}, {"n": 345, "gr": "η ταινία", "en": "film"}, {"n": 346, "gr": "οι ηθοποιοί παίζουν ζωντανά", "en": "the actors perform live"}, {"n": 347, "gr": "η σκηνή", "en": "stage"}, {"n": 348, "gr": "το σενάριο", "en": "script"}, {"n": 349, "gr": "το εισιτήριο", "en": "ticket"}, {"n": 350, "gr": "η διάρκεια", "en": "duration"}, {"n": 351, "gr": "διαλέγω τι θα δούμε", "en": "I choose what we will see"}, {"n": 352, "gr": "προσκαλώ έναν φίλο", "en": "I invite a friend"}, {"n": 353, "gr": "προσπαθώ να τον πείσω", "en": "I try to persuade him"}, {"n": 354, "gr": "δίνουμε μια ευκαιρία στο έργο", "en": "we give the show a chance"}, {"n": 355, "gr": "αν δεν σου αρέσει, διαλέγεις εσύ την επόμενη φορά", "en": "if you dislike it, you choose next time"}, {"n": 356, "gr": "περνάμε χρόνο μαζί", "en": "we spend time together"}, {"n": 357, "gr": "η χρήση της τεχνολογίας", "en": "use of technology"}, {"n": 358, "gr": "η σύνδεση στο διαδίκτυο", "en": "internet connection"}, {"n": 359, "gr": "η αναζήτηση πληροφοριών", "en": "searching for information"}, {"n": 360, "gr": "η επικοινωνία από απόσταση", "en": "communication at a distance"}, {"n": 361, "gr": "οι διαδικτυακοί κίνδυνοι", "en": "online risks"}, {"n": 362, "gr": "τα προσωπικά δεδομένα", "en": "personal data"}, {"n": 363, "gr": "ο άγνωστος στο διαδίκτυο", "en": "stranger online"}, {"n": 364, "gr": "το παραπλανητικό περιεχόμενο", "en": "misleading content"}, {"n": 365, "gr": "η υπερβολική χρήση", "en": "excessive use"}, {"n": 366, "gr": "ο χρόνος μπροστά στην οθόνη", "en": "screen time"}, {"n": 367, "gr": "βάζω χρονικά όρια", "en": "I set time limits"}, {"n": 368, "gr": "ελέγχω τις ρυθμίσεις ασφαλείας", "en": "I check safety settings"}, {"n": 369, "gr": "μιλάω με το παιδί μου", "en": "I talk with my child"}, {"n": 370, "gr": "βοηθάω με τα μαθήματα", "en": "I help with homework"}, {"n": 371, "gr": "προτείνω άλλες δραστηριότητες", "en": "I suggest other activities"}, {"n": 372, "gr": "προστατεύω την ιδιωτική ζωή", "en": "I protect privacy"}, {"n": 373, "gr": "ελέγχω αν μια πληροφορία είναι αξιόπιστη", "en": "I check whether information is reliable"}, {"n": 374, "gr": "χρησιμοποιώ το διαδίκτυο με μέτρο", "en": "I use the internet in moderation"}, {"n": 375, "gr": "το μουσείο", "en": "museum"}, {"n": 376, "gr": "το καφέ", "en": "café"}, {"n": 377, "gr": "η έκθεση", "en": "exhibition"}, {"n": 378, "gr": "τα εκθέματα", "en": "exhibits"}, {"n": 379, "gr": "η ξενάγηση", "en": "guided tour"}, {"n": 380, "gr": "μαθαίνω για την ιστορία", "en": "I learn about history"}, {"n": 381, "gr": "παραγγέλνω έναν καφέ", "en": "I order a coffee"}, {"n": 382, "gr": "συζητάμε με την ησυχία μας", "en": "we chat at our leisure"}, {"n": 383, "gr": "εξασκούμαστε στα ελληνικά", "en": "we practise Greek"}, {"n": 384, "gr": "διαβάζουμε τις πληροφορίες στα ελληνικά", "en": "we read the information in Greek"}, {"n": 385, "gr": "ρωτάμε για τα εκθέματα", "en": "we ask about the exhibits"}, {"n": 386, "gr": "γνωρίζουμε την τοπική κουλτούρα", "en": "we discover the local culture"}, {"n": 387, "gr": "περνάμε το Σαββατοκύριακο μαζί", "en": "we spend the weekend together"}, {"n": 388, "gr": "η τιμή εισόδου", "en": "admission price"}, {"n": 389, "gr": "η χαλαρή ατμόσφαιρα", "en": "relaxed atmosphere"}, {"n": 390, "gr": "προτείνω να συνδυάσουμε και τα δύο", "en": "I suggest combining both"}, {"n": 391, "gr": "ο ελεύθερος χρόνος το απόγευμα", "en": "free time in the afternoon"}, {"n": 392, "gr": "κοιτάζω το κινητό μου", "en": "I look at my phone"}, {"n": 393, "gr": "περνάω χρόνο μπροστά σε οθόνη", "en": "I spend time in front of a screen"}, {"n": 394, "gr": "τα κοινωνικά δίκτυα", "en": "social media"}, {"n": 395, "gr": "βγαίνω έξω με φίλους", "en": "I go out with friends"}, {"n": 396, "gr": "πηγαίνω για τρέξιμο", "en": "I go running"}, {"n": 397, "gr": "παίρνω καθαρό αέρα", "en": "I get fresh air"}, {"n": 398, "gr": "κινούμαι και γυμνάζομαι", "en": "I move and exercise"}, {"n": 399, "gr": "επικοινωνώ με τους φίλους μου", "en": "I communicate with my friends"}, {"n": 400, "gr": "οι διαδικτυακές παρέες", "en": "online friends / groups"}, {"n": 401, "gr": "η σωματική υγεία", "en": "physical health"}, {"n": 402, "gr": "η ξεκούραση", "en": "rest"}, {"n": 403, "gr": "περιορίζω τον χρόνο στην οθόνη", "en": "I limit screen time"}, {"n": 404, "gr": "η πόλη", "en": "city"}, {"n": 405, "gr": "οι ευκαιρίες εργασίας", "en": "job opportunities"}, {"n": 406, "gr": "η πρόσβαση σε γιατρούς", "en": "access to doctors"}, {"n": 407, "gr": "τα μέσα μαζικής μεταφοράς", "en": "public transport"}, {"n": 408, "gr": "η κίνηση και ο θόρυβος", "en": "traffic and noise"}, {"n": 409, "gr": "ο χώρος για τα παιδιά", "en": "space for children"}, {"n": 410, "gr": "οι λιγότερες υπηρεσίες", "en": "fewer services"}, {"n": 411, "gr": "μετακομίζω στην εξοχή", "en": "I move to the countryside"}, {"n": 412, "gr": "δοκιμάζω να ζήσω εκεί για λίγο", "en": "I try living there for a while"}, {"n": 413, "gr": "σκέφτομαι τις ανάγκες της οικογένειάς μου", "en": "I consider my family’s needs"}, {"n": 414, "gr": "συμβουλεύω τον φίλο μου να το σκεφτεί καλά", "en": "I advise my friend to think it through"}];
 var KEY = 'pegp-orals-v1';
-var piles = {}, pile = 'live', dir = 'en', queue = [], pos = 0, revealed = false;
+var PILES = ['live','known','almost','important','optional'];
+var piles = {}, edits = {}, deleted = {};
+var pile = 'live', dir = 'en', queue = [], pos = 0, revealed = false, editing = false;
 
 function load(){
   try{
     var raw = localStorage.getItem(KEY);
-    if(raw){ var d = JSON.parse(raw); piles = d.piles || {}; pile = d.pile || 'live'; dir = d.dir || 'en'; }
+    if(raw){
+      var d = JSON.parse(raw);
+      piles = d.piles || {}; pile = d.pile || 'live'; dir = d.dir || 'en';
+      edits = d.edits || {}; deleted = d.deleted || {};
+    }
   }catch(e){}
-  CARDS.forEach(function(c){ if(!piles[c.n]) piles[c.n] = 'live'; });
+  if(PILES.indexOf(pile) < 0) pile = 'live';
+  CARDS.forEach(function(c){ if(PILES.indexOf(piles[c.n]) < 0) piles[c.n] = 'live'; });
 }
 function save(){
-  try{ localStorage.setItem(KEY, JSON.stringify({piles:piles, pile:pile, dir:dir})); }catch(e){}
+  try{
+    localStorage.setItem(KEY, JSON.stringify(
+      {piles:piles, pile:pile, dir:dir, edits:edits, deleted:deleted}));
+  }catch(e){}
 }
+
+/* a card as it stands now: the built-in text, with any edit of yours layered on top */
+function cardOf(n){
+  var base = null;
+  for(var i = 0; i < CARDS.length; i++){ if(CARDS[i].n === n){ base = CARDS[i]; break; } }
+  if(!base) return null;
+  var e = edits[n];
+  if(!e) return base;
+  return {n:n, gr: (e.gr != null ? e.gr : base.gr), en: (e.en != null ? e.en : base.en)};
+}
+function isGone(n){ return !!deleted[n]; }
+function liveCards(){ return CARDS.filter(function(c){ return !isGone(c.n); }); }
+function binCount(){ var k = 0; for(var x in deleted){ if(deleted[x]) k++; } return k; }
+
 function counts(){
-  var c = {live:0, known:0, almost:0, important:0};
-  CARDS.forEach(function(x){ c[piles[x.n]]++; });
+  var c = {live:0, known:0, almost:0, important:0, optional:0};
+  liveCards().forEach(function(x){ c[piles[x.n]]++; });
   return c;
 }
 function buildQueue(keepN){
-  queue = CARDS.filter(function(c){ return piles[c.n] === pile; }).map(function(c){ return c.n; });
+  queue = liveCards().filter(function(c){ return piles[c.n] === pile; })
+                     .map(function(c){ return c.n; });
   pos = 0;
   if(keepN){ var i = queue.indexOf(keepN); if(i > -1) pos = i; }
 }
@@ -143,36 +217,58 @@ function esc(s){
 
 function render(){
   var c = counts();
-  document.getElementById('n-live').textContent = c.live;
-  document.getElementById('n-known').textContent = c.known;
-  document.getElementById('n-almost').textContent = c.almost;
-  document.getElementById('n-important').textContent = c.important;
+  PILES.forEach(function(p){ document.getElementById('n-' + p).textContent = c[p]; });
   [].forEach.call(document.querySelectorAll('.pile'), function(b){
     b.classList.toggle('sel', b.dataset.p === pile);
   });
   document.getElementById('dir').innerHTML =
     dir === 'el' ? 'Greek &rarr; English' : 'English &rarr; Greek';
+  document.getElementById('bin').textContent = 'Deleted (' + binCount() + ')';
 
   var box = document.getElementById('card');
   var showBtn = document.getElementById('show');
   var sorts = document.querySelector('.sorts');
+  var acts = document.getElementById('cardacts');
 
   if(!queue.length){
     document.getElementById('counter').textContent = '0 / 0';
     box.innerHTML = '<div class="empty">Nothing in this pile.<br>Pick another pile above.</div>';
     showBtn.classList.add('hide');
     sorts.classList.add('hide');
+    acts.classList.add('hide');
     return;
   }
   if(pos >= queue.length) pos = queue.length - 1;
-  var card = CARDS.filter(function(x){ return x.n === queue[pos]; })[0];
+  var card = cardOf(queue[pos]);
   document.getElementById('counter').textContent = (pos+1) + ' / ' + queue.length;
+
+  if(editing){
+    var h = '<div class="qnum">Editing &middot; Word ' + card.n + '</div><div class="edit">';
+    h += '<label>Greek</label><textarea id="e-gr" rows="2"></textarea>';
+    h += '<label>English</label><textarea id="e-en" rows="2"></textarea>';
+    h += '<div class="editbtns"><button class="ok" id="e-save">Save</button>' +
+         '<button class="no" id="e-cancel">Cancel</button></div>';
+    if(edits[card.n]) h += '<div class="edited">Edited &middot; tap Save with both boxes ' +
+                           'back to the original to clear that mark</div>';
+    h += '</div>';
+    box.innerHTML = h;
+    document.getElementById('e-gr').value = card.gr;
+    document.getElementById('e-en').value = card.en;
+    document.getElementById('e-save').addEventListener('click', saveEdit);
+    document.getElementById('e-cancel').addEventListener('click', function(){
+      editing = false; render();
+    });
+    showBtn.classList.add('hide');
+    sorts.classList.add('hide');
+    acts.classList.add('hide');
+    return;
+  }
 
   var front = dir === 'el' ? card.gr : card.en;
   var back  = dir === 'el' ? card.en : card.gr;
 
   var h = '<div class="qnum">' + (dir === 'el' ? 'Greek &rarr; English' : 'English &rarr; Greek') +
-          ' &middot; Word ' + card.n + '</div>';
+          ' &middot; Word ' + card.n + (edits[card.n] ? ' &middot; edited' : '') + '</div>';
   h += '<div class="term">' + esc(front) + '</div>';
   if(revealed) h += '<div class="answer"><b>' + (dir === 'el' ? 'English' : 'Greek') + '</b>' + esc(back) + '</div>';
   box.innerHTML = h;
@@ -183,9 +279,23 @@ function render(){
   showBtn.style.opacity = revealed ? .45 : 1;
 
   sorts.classList.toggle('hide', !revealed);
+  acts.classList.remove('hide');
   [].forEach.call(document.querySelectorAll('.sort'), function(b){
     b.classList.toggle('here', piles[card.n] === b.dataset.p);
   });
+}
+
+function saveEdit(){
+  var n = queue[pos];
+  var base = null;
+  for(var i = 0; i < CARDS.length; i++){ if(CARDS[i].n === n){ base = CARDS[i]; break; } }
+  var gr = document.getElementById('e-gr').value.trim();
+  var en = document.getElementById('e-en').value.trim();
+  if(!gr || !en){ alert('Both boxes need some text.'); return; }
+  if(gr === base.gr && en === base.en) delete edits[n];
+  else edits[n] = {gr:gr, en:en};
+  editing = false;
+  save(); render();
 }
 
 function move(p){
@@ -197,8 +307,32 @@ function move(p){
 function go(d){
   if(!queue.length) return;
   pos = (pos + d + queue.length) % queue.length;
-  revealed = false;
+  revealed = false; editing = false;
   render();
+}
+
+function drawBin(){
+  var list = document.getElementById('dlist');
+  var ns = [];
+  CARDS.forEach(function(c){ if(isGone(c.n)) ns.push(c.n); });
+  if(!ns.length){
+    list.innerHTML = '<div class="drow"><div class="txt">Nothing deleted yet.</div></div>';
+    return;
+  }
+  var h = '';
+  ns.forEach(function(n){
+    var c = cardOf(n);
+    h += '<div class="drow"><div class="txt">' + esc(c.en) +
+         '<span>' + esc(c.gr) + '</span></div>' +
+         '<button data-n="' + n + '">Restore</button></div>';
+  });
+  list.innerHTML = h;
+  [].forEach.call(list.querySelectorAll('button'), function(b){
+    b.addEventListener('click', function(){
+      delete deleted[+b.dataset.n];
+      save(); buildQueue(); drawBin(); render();
+    });
+  });
 }
 
 document.getElementById('show').addEventListener('click', function(){ revealed = true; render(); });
@@ -209,16 +343,39 @@ document.getElementById('shuffle').addEventListener('click', function(){
     var j = Math.floor(Math.random() * (i + 1));
     var t = queue[i]; queue[i] = queue[j]; queue[j] = t;
   }
-  pos = 0; revealed = false;
+  pos = 0; revealed = false; editing = false;
   render();
 });
 document.getElementById('dir').addEventListener('click', function(){
   dir = (dir === 'el') ? 'en' : 'el';
-  revealed = false; save(); render();
+  revealed = false; editing = false; save(); render();
+});
+document.getElementById('edit').addEventListener('click', function(){
+  if(!queue.length) return;
+  editing = true; render();
+});
+document.getElementById('delete').addEventListener('click', function(){
+  if(!queue.length) return;
+  var n = queue[pos], c = cardOf(n);
+  if(!confirm('Delete this card?\n\n' + c.en + '\n' + c.gr +
+              '\n\nIt moves to Deleted, where you can restore it at any time.')) return;
+  deleted[n] = 1;
+  revealed = false; editing = false;
+  save(); buildQueue(); render();
+});
+document.getElementById('bin').addEventListener('click', function(){
+  drawBin();
+  document.getElementById('sheet').classList.remove('hide');
+});
+document.getElementById('sheet-close').addEventListener('click', function(){
+  document.getElementById('sheet').classList.add('hide');
+});
+document.getElementById('sheet').addEventListener('click', function(ev){
+  if(ev.target === this) this.classList.add('hide');
 });
 [].forEach.call(document.querySelectorAll('.pile'), function(b){
   b.addEventListener('click', function(){
-    pile = b.dataset.p; revealed = false;
+    pile = b.dataset.p; revealed = false; editing = false;
     buildQueue(); save(); render();
   });
 });
@@ -226,7 +383,8 @@ document.getElementById('dir').addEventListener('click', function(){
   b.addEventListener('click', function(){ move(b.dataset.p); });
 });
 document.getElementById('backup').addEventListener('click', function(){
-  var data = {app:'pegp-orals', saved:new Date().toISOString(), pile:pile, dir:dir, piles:piles};
+  var data = {app:'pegp-orals', saved:new Date().toISOString(), pile:pile, dir:dir,
+              piles:piles, edits:edits, deleted:deleted};
   var txt = JSON.stringify(data);
   var stamp = new Date().toISOString().slice(0,16).replace(/[:T]/g,'-');
   try{
@@ -251,26 +409,36 @@ document.getElementById('restore-file').addEventListener('change', function(ev){
     try{
       var d = JSON.parse(r.result);
       if(!d || !d.piles) throw 0;
-      var valid = {live:1, known:1, almost:1, important:1}, fresh = {}, n = 0;
+      var fresh = {}, sorted = 0;
       CARDS.forEach(function(c){
         var p = d.piles[c.n];
-        fresh[c.n] = valid[p] ? p : 'live';
-        if(fresh[c.n] !== 'live') n++;
+        fresh[c.n] = PILES.indexOf(p) > -1 ? p : 'live';
+        if(fresh[c.n] !== 'live') sorted++;
       });
-      if(!confirm('Restore this backup? ' + n + ' card(s) are sorted out of Live. Your current progress will be replaced.')) return;
-      piles = fresh;
-      pile = valid[d.pile] ? d.pile : 'live';
+      var fe = {}, nEd = 0, fd = {}, nDel = 0;
+      if(d.edits) CARDS.forEach(function(c){
+        var e = d.edits[c.n];
+        if(e && (e.gr || e.en)){ fe[c.n] = {gr:e.gr, en:e.en}; nEd++; }
+      });
+      if(d.deleted) CARDS.forEach(function(c){
+        if(d.deleted[c.n]){ fd[c.n] = 1; nDel++; }
+      });
+      if(!confirm('Restore this backup?\n\n' + sorted + ' card(s) sorted out of Live\n' +
+                  nEd + ' edited\n' + nDel + ' deleted\n\n' +
+                  'Everything you have here now will be replaced.')) return;
+      piles = fresh; edits = fe; deleted = fd;
+      pile = PILES.indexOf(d.pile) > -1 ? d.pile : 'live';
       if(d.dir === 'el' || d.dir === 'en') dir = d.dir;
-      revealed = false;
+      revealed = false; editing = false;
       save(); buildQueue(); render();
     }catch(e){ alert('That file is not a valid backup.'); }
   };
   r.readAsText(f);
 });
 document.getElementById('reset').addEventListener('click', function(){
-  if(!confirm('Reset all cards back to Live?')) return;
+  if(!confirm('Reset all cards back to Live?\n\nYour edits and deleted cards are kept.')) return;
   CARDS.forEach(function(c){ piles[c.n] = 'live'; });
-  pile = 'live'; revealed = false;
+  pile = 'live'; revealed = false; editing = false;
   save(); buildQueue(); render();
 });
 
