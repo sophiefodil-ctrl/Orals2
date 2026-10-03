@@ -167,6 +167,7 @@ var KEY = 'pegp-orals-v1';
 var PILES = ['live','known','almost','important','optional'];
 var piles = {}, edits = {}, deleted = {};
 var pile = 'live', dir = 'en', queue = [], pos = 0, revealed = false, editing = false;
+var startAt = 0;
 
 function load(){
   try{
@@ -174,7 +175,7 @@ function load(){
     if(raw){
       var d = JSON.parse(raw);
       piles = d.piles || {}; pile = d.pile || 'live'; dir = d.dir || 'en';
-      edits = d.edits || {}; deleted = d.deleted || {};
+      edits = d.edits || {}; deleted = d.deleted || {}; startAt = d.at || 0;
     }
   }catch(e){}
   if(PILES.indexOf(pile) < 0) pile = 'live';
@@ -183,7 +184,8 @@ function load(){
 function save(){
   try{
     localStorage.setItem(KEY, JSON.stringify(
-      {piles:piles, pile:pile, dir:dir, edits:edits, deleted:deleted}));
+      {piles:piles, pile:pile, dir:dir, edits:edits, deleted:deleted,
+       at: queue.length ? queue[pos] : 0}));
   }catch(e){}
 }
 
@@ -308,7 +310,7 @@ function go(d){
   if(!queue.length) return;
   pos = (pos + d + queue.length) % queue.length;
   revealed = false; editing = false;
-  render();
+  save(); render();
 }
 
 function drawBin(){
@@ -330,7 +332,9 @@ function drawBin(){
   [].forEach.call(list.querySelectorAll('button'), function(b){
     b.addEventListener('click', function(){
       delete deleted[+b.dataset.n];
-      save(); buildQueue(); drawBin(); render();
+      var cur = queue.length ? queue[pos] : 0;
+      buildQueue(cur);
+      save(); drawBin(); render();
     });
   });
 }
@@ -360,8 +364,10 @@ document.getElementById('delete').addEventListener('click', function(){
   if(!confirm('Delete this card?\n\n' + c.en + '\n' + c.gr +
               '\n\nIt moves to Deleted, where you can restore it at any time.')) return;
   deleted[n] = 1;
+  queue.splice(pos, 1);
+  if(pos >= queue.length) pos = queue.length ? queue.length - 1 : 0;
   revealed = false; editing = false;
-  save(); buildQueue(); render();
+  save(); render();
 });
 document.getElementById('bin').addEventListener('click', function(){
   drawBin();
@@ -442,7 +448,7 @@ document.getElementById('reset').addEventListener('click', function(){
   save(); buildQueue(); render();
 });
 
-load(); buildQueue(); render();
+load(); buildQueue(startAt); render();
 </script>
 <script>if("serviceWorker" in navigator){window.addEventListener("load",()=>navigator.serviceWorker.register("sw.js").catch(()=>{}));}</script></body>
 </html>
